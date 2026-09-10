@@ -1,0 +1,319 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for Flight Booking Support Workshop prerequisites — Cognito, Lambda Get Fare Policy, and SSM parameters'
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Cognito Configuration
+        Parameters:
+          - UserPoolName
+          - WebAppClientName
+
+Parameters:
+
+  UserPoolName:
+    Type: String
+    Default: 'Demo2UserPool'
+    Description: 'Name of the Cognito User Pool'
+
+  WebAppClientName:
+    Type: String
+    Default: 'WebClient'
+    Description: 'Name of the Cognito User Pool Web Application Client'
+
+Resources:
+
+  # ============================================================
+  # Cognito Resources
+  # ============================================================
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Ref UserPoolName
+      MfaConfiguration: 'OFF'
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      UsernameConfiguration:
+        CaseSensitive: false
+      UsernameAttributes:
+        - email  # <--- Use email as username
+      AutoVerifiedAttributes:
+        - email  # <--- Auto-verify email if you want to skip confirmation step
+      Policies:
+            SignInPolicy:
+              AllowedFirstAuthFactors:
+                - PASSWORD
+                - EMAIL_OTP
+
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      Description: Administrator group
+      UserPoolId: !Ref UserPool
+      Precedence: 1  # Higher priority (lower number = higher precedence)
+
+  UserGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: user
+      Description: Regular User group
+      UserPoolId: !Ref UserPool
+      Precedence: 2
+
+  WebUserPoolClient:
+    DependsOn: ResourceServer
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Ref WebAppClientName
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false  # Don't use secret for SPA or web apps
+      ExplicitAuthFlows:
+        - ALLOW_USER_AUTH
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+        - !Join
+            - ''
+            - - 'resource-server-'
+              - !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+              - '/read'
+      AllowedOAuthFlowsUserPoolClient: true
+      CallbackURLs:
+        - http://localhost:4200/auth/callback
+      LogoutURLs:
+        - http://localhost:4200/logout
+      SupportedIdentityProviders:
+        - COGNITO
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 5
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      EnableTokenRevocation: true
+      PreventUserExistenceErrors: ENABLED
+      RefreshTokenRotation:
+        Feature: ENABLED
+        RetryGracePeriodSeconds: 10
+
+  ResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref UserPool
+      Identifier: !Join
+        - '-'
+        - - 'resource-server'
+          - !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+      Name: !Join
+        - '-'
+        - - 'Resource Server '
+          - !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+      Scopes:
+        - ScopeName: 'read'
+          ScopeDescription: 'An example scope created by Amazon Cognito quick start'
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPool
+      ManagedLoginVersion: 2
+      Domain: !Join
+        - ''
+        - - !Ref 'AWS::Region'
+          - !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+
+  ManagedLoginBranding:
+    Type: AWS::Cognito::ManagedLoginBranding
+    DependsOn:
+      - UserPoolDomain
+      - WebUserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientId: !Ref WebUserPoolClient
+      UseCognitoProvidedValues: true
+
+  # ============================================================
+  # Fare Policies Lambda Function (used in Gateway)
+  # ============================================================
+
+  FarePolicyLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: workshop-get-fare-policy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  FarePolicyFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: workshop-get-fare-policy
+      Runtime: python3.13
+      Architectures:
+        - arm64
+      Handler: index.handler
+      Role: !GetAtt FarePolicyLambdaRole.Arn
+      Timeout: 10
+      Code:
+        ZipFile: |
+          import json
+
+
+          FARE_POLICIES = {
+              "economy": {
+                  "change_fee": "$75",
+                  "cancellation": "Allowed up to 24 hours before departure",
+                  "refund": "Travel credit"
+              },
+              "economy_flex": {
+                  "change_fee": "No change fee",
+                  "cancellation": "Allowed up to departure",
+                  "refund": "Full refund"
+              },
+              "business": {
+                  "change_fee": "No change fee",
+                  "cancellation": "Allowed up to departure",
+                  "refund": "Full refund"
+              }
+          }
+
+
+          def handler(event, context):
+
+              fare_class = event.get("fare_class", "").lower()
+
+              if fare_class in FARE_POLICIES:
+                  policy = FARE_POLICIES[fare_class]
+
+                  return {
+                      "statusCode": 200,
+                      "body": json.dumps({
+                          "fare_class": fare_class,
+                          "change_fee": policy["change_fee"],
+                          "cancellation": policy["cancellation"],
+                          "refund": policy["refund"]
+                      })
+                  }
+
+              return {
+                  "statusCode": 404,
+                  "body": json.dumps({
+                      "error": f"No fare policy found for {fare_class}"
+                  })
+              }
+
+  # ============================================================
+  # SSM Parameters — Cognito
+  # ============================================================
+
+  CognitoWebClientIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/flightbookingsupport/agentcore/web_client_id
+      Type: String
+      Value: !Ref WebUserPoolClient
+      Description: Cognito client ID for web app
+      Tags:
+        Application: FlightBookingSupport
+
+  UserPoolIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/flightbookingsupport/agentcore/pool_id
+      Type: String
+      Value: !Ref UserPool
+      Description: Cognito client ID
+      Tags:
+        Application: FlightBookingSupport
+
+  CognitoAuthScopeParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/flightbookingsupport/agentcore/cognito_auth_scope
+      Type: String
+      Value: !Join
+        - ''
+        - - 'resource-server-'
+          - !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+          - '/read'
+      Description: OAuth2 scope for Cognito auth
+      Tags:
+        Application: FlightBookingSupport
+
+  CognitoDiscoveryURLParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/flightbookingsupport/agentcore/cognito_discovery_url
+      Type: String
+      Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}/.well-known/openid-configuration'
+      Description: OAuth2 Discovery URL
+      Tags:
+        Application: FlightBookingSupport
+
+  CognitoTokenURLParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/flightbookingsupport/agentcore/cognito_token_url
+      Type: String
+      Value: !Join
+        - ''
+        - - !Sub 'https://${AWS::Region}'
+          - !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+          - !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+      Description: OAuth2 Token URL
+      Tags:
+        Application: FlightBookingSupport
+
+  CognitoAuthorizeURLParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/flightbookingsupport/agentcore/cognito_auth_url
+      Type: String
+      Value: !Join
+        - ''
+        - - !Sub 'https://${AWS::Region}'
+          - !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+          - !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2/authorize'
+      Description: OAuth2 Token URL
+      Tags:
+        Application: FlightBookingSupport
+
+  CognitoDomainParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/flightbookingsupport/agentcore/cognito_domain
+      Type: String
+      Value: !Join
+        - ''
+        - - !Sub 'https://${AWS::Region}'
+          - !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+          - !Sub '.auth.${AWS::Region}.amazoncognito.com'
+      Description: Cognito hosted domain for OAuth2
+      Tags:
+        Application: FlightBookingSupport
+
+  # ============================================================
+  # SSM Parameter — Fare Policy Lambda ARN
+  # ============================================================
+
+  FarePolicyLambdaArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /app/flightbookingsupport/agentcore/fare_policy_lambda_arn
+      Type: String
+      Value: !GetAtt FarePolicyFunction.Arn
+      Description: ARN of the fare policy Lambda function for AgentCore Gateway
+      Tags:
+        Application: FlightBookingSupport
