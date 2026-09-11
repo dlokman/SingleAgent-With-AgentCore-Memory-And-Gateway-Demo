@@ -1,3 +1,17 @@
 {
-  "targets": {}
+  "targets": {
+    "default": {
+      "resources": {
+        "runtimes": {
+          "FlightBookingAgent": {
+            "runtimeId": "FlightBookingSupport_FlightBookingAgent-Lr8HrM9ArJ",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:742752463290:runtime/FlightBookingSupport_FlightBookingAgent-Lr8HrM9ArJ",
+            "roleArn": "arn:aws:iam::742752463290:role/AgentCore-FlightBookingSu-ApplicationAgentFlightBoo-wf4QsH2qwI1q"
+          }
+        },
+        "stackName": "AgentCore-FlightBookingSupport-default",
+        "deployHash": "b5476117cbf3e54d"
+      }
+    }
+  }
 }
