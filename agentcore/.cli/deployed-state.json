@@ -9,8 +9,26 @@
             "roleArn": "arn:aws:iam::742752463290:role/AgentCore-FlightBookingSu-ApplicationAgentFlightBoo-wf4QsH2qwI1q"
           }
         },
+        "memories": {
+          "SharedMemory": {
+            "memoryId": "FlightBookingSupport_SharedMemory-WxeZAr4460",
+            "memoryArn": "arn:aws:bedrock-agentcore:us-east-1:742752463290:memory/FlightBookingSupport_SharedMemory-WxeZAr4460"
+          }
+        },
+        "gateways": {
+          "flight-booking-gateway": {
+            "gatewayId": "flightbookingsupport-flight-booking-gateway-fcrhxgtzda",
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-east-1:742752463290:gateway/flightbookingsupport-flight-booking-gateway-fcrhxgtzda",
+            "gatewayUrl": "https://flightbookingsupport-flight-booking-gateway-fcrhxgtzda.gateway.bedrock-agentcore.us-east-1.amazonaws.com",
+            "targets": {
+              "FarePolicies": {
+                "targetId": "M5BOI0EJOO"
+              }
+            }
+          }
+        },
         "stackName": "AgentCore-FlightBookingSupport-default",
-        "deployHash": "b5476117cbf3e54d"
+        "deployHash": "0da6c67a6efb78ac"
       }
     }
   }

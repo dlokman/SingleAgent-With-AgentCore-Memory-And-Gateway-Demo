@@ -1,10 +1,10 @@
 from strands import Agent, tool
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from model.load import load_model
-from mcp_client.client import get_streamable_http_mcp_client
+from mcp_client.client import get_streamable_http_mcp_client, get_gateway_mcp_client
 import uuid
 import logging
-
+from memory.session import get_memory_session_manager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 app = BedrockAgentCoreApp()
 
 # Define a Streamable HTTP MCP Client
-mcp_clients = [get_streamable_http_mcp_client()]
+mcp_clients = [get_streamable_http_mcp_client(), get_gateway_mcp_client()]
 
 
 SYSTEM_PROMPT = """
@@ -26,6 +26,7 @@ You help users search for flights, view available fare classes, search fare poli
 Follow these rules:
 
 1. When a user asks for available fare classes, use get_all_fare_classes.
+   When displaying fare classes returned by get_all_fare_classes, preserve the exact fare class values returned by the tool. Do not rename or format the values.
 
 2. When a user wants to find a flight, use search_flights.
 
@@ -58,7 +59,7 @@ Follow these rules:
    - Inform the user that no matching booking was found.
    - If the booking exists, use its booking ID to call cancel_booking.
 
-6. Use get_fare_policy when the user asks about fare policy for a fare class.
+6. Call get_fare_policy when the user asks about fare policy for a specific fare class.
 
 7. Never invent flight IDs, booking IDs, prices, fare classes, passenger names, booking information, or fare policies.
    Use information provided by the user or returned by tools.
@@ -306,21 +307,28 @@ for mcp_client in mcp_clients:
 
 _agent = None
 
-def get_or_create_agent():
+def get_or_create_agent(session_id, user_id):
     global _agent
     if _agent is None:
         _agent = Agent(
             model=load_model(),
+            session_manager=get_memory_session_manager(session_id, user_id), # will persist raw conversation as Short Term Memory in AgentCore Memory. We configured this to 7 days in agentcore.json
             system_prompt=SYSTEM_PROMPT,
             tools=tools
         )
     return _agent
 
-
 @app.entrypoint
 async def invoke(payload, context):
     log.info("Invoking Agent.....")
-    agent = get_or_create_agent()
+
+    session_id = context.session_id
+    user_id = 'e4d8e4b8-7071-70c0-cab1-7d6b43a9965b'
+
+    if not session_id or not user_id:
+        raise ValueError("session_id and user_id are required. Pass --session-id and --user-id when invoking.")
+
+    agent = get_or_create_agent(session_id, user_id)
 
     # Stream Strands events back through AgentCore
     async for event in agent.stream_async(payload.get("prompt")):

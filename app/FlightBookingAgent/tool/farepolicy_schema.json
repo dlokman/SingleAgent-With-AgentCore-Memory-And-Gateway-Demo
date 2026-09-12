@@ -1,0 +1,18 @@
+[
+  {
+    "name": "get_fare_policy",
+    "description": "Get the fare policy for a specified fare class. Returns the change fee, cancellation policy, and refund policy.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fare_class": {
+          "type": "string",
+          "description": "The fare class to retrieve the policy for."
+        }
+      },
+      "required": [
+        "fare_class"
+      ]
+    }
+  }
+]
