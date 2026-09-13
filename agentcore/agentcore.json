@@ -15,7 +15,19 @@
       "codeLocation": "app/FlightBookingAgent/",
       "runtimeVersion": "PYTHON_3_14",
       "networkMode": "PUBLIC",
-      "protocol": "HTTP"
+      "protocol": "HTTP",
+      "requestHeaderAllowlist": [
+        "Authorization"
+      ],
+      "authorizerType": "CUSTOM_JWT",
+      "authorizerConfiguration": {
+        "customJwtAuthorizer": {
+          "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_UqVgmTUWo/.well-known/openid-configuration",
+          "allowedClients": [
+            "48rmngdj0llmlglsj2ttjothee"
+          ]
+        }
+      }
     }
   ],
   "memories": [
@@ -59,9 +71,9 @@
   "onlineEvalConfigs": [],
   "agentCoreGateways": [
     {
-      "name": "flight-booking-gateway",
+      "name": "My-Gateway-Secure",
       "protocolType": "None",
-      "description": "Gateway for flight-booking-gateway",
+      "description": "Gateway for My-Gateway-Secure",
       "targets": [
         {
           "name": "FarePolicies",
@@ -72,7 +84,15 @@
           }
         }
       ],
-      "authorizerType": "NONE",
+      "authorizerType": "CUSTOM_JWT",
+      "authorizerConfiguration": {
+        "customJwtAuthorizer": {
+          "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_UqVgmTUWo/.well-known/openid-configuration",
+          "allowedClients": [
+            "48rmngdj0llmlglsj2ttjothee"
+          ]
+        }
+      },
       "enableSemanticSearch": true,
       "exceptionLevel": "NONE"
     }

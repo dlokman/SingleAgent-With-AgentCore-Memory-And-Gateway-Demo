@@ -9,8 +9,8 @@ import json
 
 REGION_NAME = "us-east-1"
 MEMORY_ID = "FlightBookingSupport_SharedMemory-WxeZAr4460" # update with your MEMORY_ID from the environment variable after deployment
-ACTOR_ID = "e4d8e4b8-7071-70c0-cab1-7d6b43a9965b"
-SESSION_ID = "efd97557-d3ce-4b42-8981-2c21f5ffd321"  #update with your session id to see the relevant memories
+ACTOR_ID = "d4e83478-c0b1-70a0-7c9f-7d51c1782b98"
+SESSION_ID = "8642cd54-8ce8-468c-85a6-e4ad5b85e336"  #update with your session id to see the relevant memories
 
 # =========================
 # CLIENT

@@ -1,10 +1,12 @@
 from strands import Agent, tool
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from model.load import load_model
-from mcp_client.client import get_streamable_http_mcp_client, get_gateway_mcp_client
+from mcp_client.client import get_streamable_http_mcp_client, get_gateway_mcp_client, DynamicBearerAuth
 import uuid
 import logging
 from memory.session import get_memory_session_manager
+import jwt
+import json
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,9 +15,6 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 app = BedrockAgentCoreApp()
-
-# Define a Streamable HTTP MCP Client
-mcp_clients = [get_streamable_http_mcp_client(), get_gateway_mcp_client()]
 
 
 SYSTEM_PROMPT = """
@@ -295,40 +294,84 @@ def cancel_booking(booking_id: str, passenger_name: str) -> str:
     )
 
 
-tools = [get_all_fare_classes, search_flights, get_all_bookings_for_passenger, create_booking, cancel_booking]
-
-# Add MCP client (Exa AI web search) to tools
-for mcp_client in mcp_clients:
-    if mcp_client:
-        tools.append(mcp_client)
-
-
 # --- Agent Setup ---
 
 _agent = None
 
-def get_or_create_agent(session_id, user_id):
+# This object is shared with the Gateway MCP HTTP client.
+# Its Authorization header is refreshed on every AgentCore Runtime invocation.
+_gateway_auth = DynamicBearerAuth()
+
+def get_or_create_agent(session_id, user_id, auth_header):
     global _agent
+
+	# Access Token renews after 60 minutes so we need to send it to Gateway for each request.
+    _gateway_auth.set_auth_header(auth_header)
+
     if _agent is None:
+        session_manager = get_memory_session_manager(session_id, user_id)  # will persist raw conversation as Short Term Memory in AgentCore Memory. We configured this to 7 days in agentcore.json
+
+        # Create MCP clients only when the Agent is first created.
+        mcp_clients = [get_streamable_http_mcp_client(), get_gateway_mcp_client(_gateway_auth)]
+
+        tools = [get_all_fare_classes, search_flights, get_all_bookings_for_passenger, create_booking, cancel_booking]
+
+        for mcp_client in mcp_clients:
+            if mcp_client:
+                tools.append(mcp_client)
+
         _agent = Agent(
             model=load_model(),
-            session_manager=get_memory_session_manager(session_id, user_id), # will persist raw conversation as Short Term Memory in AgentCore Memory. We configured this to 7 days in agentcore.json
+            session_manager=session_manager,
             system_prompt=SYSTEM_PROMPT,
             tools=tools
         )
+
     return _agent
+
+def extract_user_id(auth_header) -> str | None:
+    """Extract user_id from JWT bearer token (username claim) or fall back to custom header."""
+
+    if auth_header and auth_header.startswith("Bearer "):
+        try:
+            # Format: Bearer eyJhbGciOiJSUzI1NiIs...
+            token = auth_header.split(" ", 1)[1]  # Gets the JWT token part after "Bearer "
+            claims = jwt.decode(token, options={"verify_signature": False})
+             #For Debugging. Log JWT Claims
+            # log.info("JWT claims: %s", json.dumps(claims, indent=2))
+            # groups = claims.get("cognito:groups", [])   # tells you which groups this user belongs to e.g ["Admins", "FlightAgents"]
+            username = claims.get("username")
+            if username:
+                return username
+        except Exception as e:
+            log.warning(f"Failed to decode JWT for user_id: {e}")
+    else:
+        log.info(f"No Bearer token found. Auth header present: {auth_header is not None}")
+        raise Exception("No Authorization header")
+
 
 @app.entrypoint
 async def invoke(payload, context):
     log.info("Invoking Agent.....")
 
     session_id = context.session_id
-    user_id = 'e4d8e4b8-7071-70c0-cab1-7d6b43a9965b'
+    request_headers = context.request_headers
+
+    # Access request headers - handle None case
+    request_headers = context.request_headers or {}
+
+    # Get Client JWT token
+    auth_header = request_headers.get('Authorization', '')
+
+    if not auth_header:
+        raise Exception("No authorization header")
+
+    user_id = extract_user_id(auth_header)
 
     if not session_id or not user_id:
         raise ValueError("session_id and user_id are required. Pass --session-id and --user-id when invoking.")
 
-    agent = get_or_create_agent(session_id, user_id)
+    agent = get_or_create_agent(session_id, user_id, auth_header)
 
     # Stream Strands events back through AgentCore
     async for event in agent.stream_async(payload.get("prompt")):

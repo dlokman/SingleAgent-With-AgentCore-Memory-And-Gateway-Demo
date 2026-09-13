@@ -1,0 +1,51 @@
+To create a new User:
+
+### Create User 1 - belongs to admin group
+  aws cognito-idp admin-create-user `
+    --user-pool-id us-east-1_UqVgmTUWo `
+    --username dan.lokman@hotmail.com `
+    --temporary-password "TempPass#12345" `
+    --user-attributes "Name=email,Value=dan.lokman@hotmail.com" "Name=email_verified,Value=true" `
+    --no-cli-pager
+
+  aws cognito-idp admin-add-user-to-group `
+    --user-pool-id us-east-1_UqVgmTUWo `
+    --username dan.lokman@hotmail.com `
+    --group-name admin `
+    --no-cli-pager
+
+ aws cognito-idp admin-update-user-attributes `
+    --user-pool-id us-east-1_UqVgmTUWo `
+    --username dan.lokman@hotmail.com `
+    --user-attributes "Name=name,Value=Danial Lokman" `
+    --no-cli-pager
+
+// Can set additional user attributes like name. name is a standard Cognito/OIDC attribute, so you do not need to create a custom attribute for a full display name.
+aws cognito-idp admin-create-user `
+  --user-pool-id us-east-1_UqVgmTUWo `
+  --username dan.lokman@hotmail.com `
+  --temporary-password "TempPass#12345" `
+  --user-attributes `
+    "Name=email,Value=dan.lokman@hotmail.com" `
+    "Name=email_verified,Value=true" `
+    "Name=name,Value=Danial Lokman" `
+  --no-cli-pager
+
+
+### Create User 2 - belongs to user group
+
+	aws cognito-idp admin-create-user `
+	--user-pool-id us-east-1_UqVgmTUWo `
+	--username dlokman746@gmail.com `
+	--temporary-password "TempPass#12345" `
+	--user-attributes `
+		"Name=email,Value=dlokman746@gmail.com" `
+		"Name=email_verified,Value=true" `
+		"Name=name,Value=John Doe" `
+	--no-cli-pager
+
+  aws cognito-idp admin-add-user-to-group `
+    --user-pool-id us-east-1_UqVgmTUWo `
+    --username dlokman746@gmail.com `
+    --group-name user `
+    --no-cli-pager
