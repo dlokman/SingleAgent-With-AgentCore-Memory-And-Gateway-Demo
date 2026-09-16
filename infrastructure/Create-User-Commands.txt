@@ -49,3 +49,26 @@ aws cognito-idp admin-create-user `
     --username dlokman746@gmail.com `
     --group-name user `
     --no-cli-pager
+
+================================================================================================================
+
+Add Evaluations
+
+agentcore add online-eval `
+  --name QualityMonitor `
+  --runtime FlightBookingAgent `
+  --evaluator Builtin.GoalSuccessRate Builtin.Correctness Builtin.ToolSelectionAccuracy `
+  --sampling-rate 100 `
+  --enable-on-create
+
+Remove Evaluation
+agentcore remove online-eval --name QualityMonitor
+
+Pause/Resume Evaluation (Optional)
+You can pause online evaluation to reduce costs or during maintenance:
+
+	# Pause
+	agentcore pause online-eval QualityMonitor
+
+	# Resume
+	agentcore resume online-eval QualityMonitor

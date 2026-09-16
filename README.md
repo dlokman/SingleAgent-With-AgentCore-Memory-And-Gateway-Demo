@@ -1,109 +1,161 @@
-# AgentCore Project
+# Single Agent Chatbot with AgentCore Memory & Gateway
 
-This project was created with the [AgentCore CLI](https://github.com/aws/agentcore-cli).
+## Tech Stack
+- **Architecture:** AWS-Native Tech Stack
+- **Project Setup:** UV-based project created using the AgentCore CLI
+- **Hosting Platform:** Amazon Bedrock AgentCore
+- **AI Agent Framework:** Strands Agents SDK
+- **MCP Server:** AgentCore Gateway → AWS Lambda Target
+- **Programming Language:** Python
 
-## Project Structure
+## 🏗️ Architecture Overview
+![architecture](Architecture-Diagram.svg)
+
+## 🌟 Project Overview
+
+### Models
+
+- **Foundation Model:** Claude Sonnet 4.6
+
+
+### Summary
+
+- This is a FlightBookingSupport Demo using Single Agent Chatbot with AgentCore Memory & Gateway
+
+## 🗺️ Implementation Overview
+
+### Authentication
+
+Authentication between **Angular** and **AgentCoreRuntime** and **AgentCoreGateway** is done using JWT token from **AWS Cognito**
+
+AgentCoreGateway code includes provision for new access token after 60 minutes expiry
+
+### Local Tools
+- get_all_fare_classes
+- search_flights
+- get_all_bookings_for_passenger
+- create_booking
+- cancel_booking
+
+### Agentcore Gateway Target
+ - get_fare_policy Lambda Function
+
+### AgentCore Memory Types
+
+1. **Short Term Memory(Conversation history)**
+   - 7 days Expiration
+
+2. **Long Term Memory**
+   - SEMANTIC
+   - SUMMARIZATION
+   - USER_PREFERENCE
+   - Episodic Extracted Memories
+   - Episodic Reflection Memories
+
+**Command to Add Memory**: agentcore add memory --name SharedMemory  --strategies "SEMANTIC,SUMMARIZATION,USER_PREFERENCE,EPISODIC" --expiry 7
+
+### Other Features
+
+- Includes Cloudformation Stack for provisioning resources
+
+- Includes AgentCore Evaluations
+
+- Admin User gate access to application by creating users via script and assigning user to a group for role based access
+
+- Includes dumping memory records using a script for troubleshooting
+
+
+## 🚀 Future Improvements
+ - Add API Gateway and Lambda to the stack if needed (Already tested this and it works with existing codebase)
+
+   Angular => API Gateway => Lambda => AgentCore Runtime => AgentCore Gateway
+
+## Folder Hierarchy
 
 ```
-my-project/
-├── AGENTS.md               # AI coding assistant context
+FlightBookingSupport/
+│
 ├── agentcore/
-│   ├── agentcore.json      # Project config (agents, memories, credentials, gateways, evaluators)
-│   ├── aws-targets.json    # Deployment targets (account + region)
-│   ├── .env.local          # Secrets — API keys (gitignored)
-│   ├── .llm-context/       # TypeScript type definitions for AI assistants
-│   │   ├── agentcore.ts    # AgentCoreProjectSpec types
-│   │   ├── aws-targets.ts  # Deployment target types
-│   │   └── mcp.ts          # Gateway and MCP tool types
-│   └── cdk/                # CDK infrastructure (@aws/agentcore-cdk)
-├── app/                    # Agent application code
-└── evaluators/             # Custom evaluator code (if any)
+│
+├── app/
+│   └── FlightBookingAgent/
+│       ├── __pycache__/
+│       ├── .venv/
+│       ├── mcp_client/
+│       ├── memory/
+│       ├── model/
+│       ├── skills/
+│       ├── tool/
+│       ├── .gitignore
+│       ├── dump-all-memories-using-aws-sdk.py    # dump all memories for debugging purposes
+│       ├── main.py
+│       ├── pyproject.toml
+│       ├── README.md
+│       └── uv.lock
+│
+├── infrastructure/
+│   ├── cloud-formation-stack.yml                  # cloudformation stack to provision resources
+│   └── Create-User-Commands.txt                   # contains admin scripts to create users and gate access to application
+│
+├── AGENTS.md
+└── README.md
+
 ```
 
-## Getting Started
+## Project Installation (After Cloning the Repository)
 
-### Prerequisites
+1. From the `FlightBookingSupport/agentcore/cdk` folder (CDK is an npm-based project), run:
 
-- **Node.js** 20.x or later
-- **Python 3.10+** and **uv** for Python agents ([install uv](https://docs.astral.sh/uv/getting-started/installation/))
-- **AWS credentials** configured (`aws configure` or environment variables)
-- **Docker** (only for Container build agents)
+   ```powershell
+   npm ci (installs exactly from the package-lock.json)
+   ```
 
-### Development
+2. From the `FlightBookingSupport/app/FlightBookingAgent` folder (same level as `pyproject.toml`), run:
 
-Run your agent locally:
+   ```powershell
+   uv sync    (creates .venv virtual environment as well)
+   ```
+<br>
 
-```bash
-agentcore dev
+## 🧪 Testcases
+
+```text
+
+**AgentCore Memory Test**
+login with dan.lokman@hotmail.com to FlightBookingAgent
+Hi, What can you do?
+My name is Dan and I prefer window seats.   (stored in User Preferences - Long Term Memory - can be retrieved cross sessions)
+Logout and Log back In - Or  Click on New Chat (will use a New Session ID). Wait 1-2 minutes for Long Term Memory
+What do i prefer?                              (Information Retrieved from Semantic- Long Term Memory)
+
+in another browser login with dlokman746@gmail.com to FlightBookingAgent
+What do i prefer? (old memories if still retained for 7 days. Memory is specific for user)
+
+I just bought a Mechanical Keyboard           (stored in Semantic Memory - Long Term Memory - can be retrieved cross sessions)
+Logout and Log back In - Or  Click on New Chat (will use a New Session ID). Wait 1-2 minutes for Long Term Memory
+What did i just buy?                              (Information Retrieved from Semantic- Long Term Memory)
+
+I own a HP Elitebook Laptop                    (stored in Semantic Memory)
+
+
+**AgentCore Gateway Test**
+Gateway Target is Lambda Function called workshop-get-fare-policy
+
+List all available fare classes                       (local tool invoked)
+What is the fare policy for economy_flex fare class?  (Model will invoke Gateway Target: Lambda Function workshop-get-fare-policy to get the result)
+
+**Local Tools Test**
+Find me flights from Houston to Seattle on October 15, 2026.   (Search for flights)
+Book FLT-102 for John Smith
+Show me all bookings for John Smith.                          (Retrieve Bookings)
+Cancel John Smith's FLT-102 booking                           (Before cancelling, model will call get_all_bookings_for_passenger(passenger_name)
+                                                               to verify passenger currently has the booking
+Verify deletion                                                Show me all bookings for John Smith.
+
+Error conditions test
+Find me flights from Houston to Los Angeles on October 15, 2026. (No Flights)
+Book FLT-999 for John Smith.                                     (Try to Book an Invalid flight ID)
+After John already has FLT-102: Book FLT-102 for John Smith.     (Duplicate booking)
+Cancel booking BK-DOESNOTEXIST for John Smith.                   (Cancel nonexistent booking)
+
 ```
-
-### Validate Invocation Input
-
-Validate runtime invocation payloads before forwarding them to an agent framework. Keep user prompts typed as strings
-and pass only prompt text to the agent.
-
-### Deployment
-
-Deploy to AWS:
-
-```bash
-agentcore deploy
-```
-
-## Commands
-
-| Command | Description |
-| --- | --- |
-| `agentcore create` | Create a new AgentCore project |
-| `agentcore add` | Add resources (agent, memory, credential, gateway, evaluator, policy) |
-| `agentcore remove` | Remove resources |
-| `agentcore dev` | Run agent locally with hot-reload |
-| `agentcore deploy` | Deploy to AWS via CDK |
-| `agentcore status` | Show deployment status |
-| `agentcore invoke` | Invoke agent (local or deployed) |
-| `agentcore logs` | View agent logs |
-| `agentcore traces` | View agent traces |
-| `agentcore eval` | Run evaluations |
-| `agentcore package` | Package agent artifacts |
-| `agentcore validate` | Validate configuration |
-| `agentcore pause` | Pause a deployed agent |
-| `agentcore resume` | Resume a paused agent |
-| `agentcore fetch` | Fetch remote resource definitions |
-| `agentcore import` | Import existing resources |
-| `agentcore update` | Check for CLI updates |
-
-## Configuration
-
-Edit the JSON files in `agentcore/` to configure your project. See `agentcore/.llm-context/` for type definitions and validation constraints.
-
-The project uses a **flat resource model** — agents, memories, credentials, gateways, evaluators, and policies are top-level arrays in `agentcore.json`. Resources are independent; agents discover memories and credentials at runtime via environment variables or SDK calls.
-
-## Resources
-
-| Resource | Purpose |
-| --- | --- |
-| Agent (runtime) | HTTP, MCP, or A2A agent deployed to AgentCore Runtime |
-| Memory | Persistent context storage with configurable strategies |
-| Credential | API key or OAuth credential providers |
-| Gateway | MCP gateway that routes tool calls to targets |
-| Gateway Target | Tool implementation (Lambda, MCP server, OpenAPI, Smithy, API Gateway) |
-| Evaluator | Custom LLM-as-a-Judge or code-based evaluation |
-| Online Eval Config | Continuous evaluation pipeline for deployed agents |
-| Policy | Cedar authorization policies for gateway tools |
-
-### Agent Types
-
-- **Template agents**: Created from framework templates (Strands, LangChain/LangGraph, GoogleADK, OpenAI Agents, Autogen)
-- **BYO agents**: Bring your own code with `agentcore add agent --type byo`
-- **Import agents**: Import existing Bedrock agents with `agentcore import`
-
-### Build Types
-
-- **CodeZip**: Python source packaged as a zip and deployed directly to AgentCore Runtime
-- **Container**: Docker image built via CodeBuild (ARM64), pushed to ECR, and deployed to AgentCore Runtime
-
-## Documentation
-
-- [AgentCore CLI](https://github.com/aws/agentcore-cli)
-- [AgentCore CDK Constructs](https://github.com/aws/agentcore-l3-cdk-constructs)
-- [Amazon Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/)

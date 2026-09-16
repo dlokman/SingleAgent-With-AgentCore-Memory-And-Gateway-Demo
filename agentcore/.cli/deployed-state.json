@@ -15,22 +15,27 @@
             "memoryArn": "arn:aws:bedrock-agentcore:us-east-1:742752463290:memory/FlightBookingSupport_SharedMemory-WxeZAr4460"
           }
         },
-        "mcp": {
-          "gateways": {
-            "My-Gateway-Secure": {
-              "gatewayId": "flightbookingsupport-my-gateway-secure-xile1nxlsb",
-              "gatewayArn": "arn:aws:bedrock-agentcore:us-east-1:742752463290:gateway/flightbookingsupport-my-gateway-secure-xile1nxlsb",
-              "gatewayUrl": "https://flightbookingsupport-my-gateway-secure-xile1nxlsb.gateway.bedrock-agentcore.us-east-1.amazonaws.com",
-              "targets": {
-                "FarePolicies": {
-                  "targetId": "3WWXZEB7DR"
-                }
+        "gateways": {
+          "My-Gateway-Secure": {
+            "gatewayId": "flightbookingsupport-my-gateway-secure-xile1nxlsb",
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-east-1:742752463290:gateway/flightbookingsupport-my-gateway-secure-xile1nxlsb",
+            "gatewayUrl": "https://flightbookingsupport-my-gateway-secure-xile1nxlsb.gateway.bedrock-agentcore.us-east-1.amazonaws.com",
+            "targets": {
+              "FarePolicies": {
+                "targetId": "3WWXZEB7DR"
               }
             }
           }
         },
+        "onlineEvalConfigs": {
+          "QualityMonitor": {
+            "onlineEvaluationConfigId": "FlightBookingSupport_QualityMonitor-EHG3j0CCGL",
+            "onlineEvaluationConfigArn": "arn:aws:bedrock-agentcore:us-east-1:742752463290:online-evaluation-config/FlightBookingSupport_QualityMonitor-EHG3j0CCGL",
+            "agent": "FlightBookingAgent"
+          }
+        },
         "stackName": "AgentCore-FlightBookingSupport-default",
-        "deployHash": "8ee0b79009e7976b"
+        "deployHash": "9004544b39fc55e7"
       }
     }
   }

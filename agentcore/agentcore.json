@@ -68,7 +68,19 @@
   "knowledgeBases": [],
   "credentials": [],
   "evaluators": [],
-  "onlineEvalConfigs": [],
+  "onlineEvalConfigs": [
+    {
+      "name": "QualityMonitor",
+      "agent": "FlightBookingAgent",
+      "evaluators": [
+        "Builtin.GoalSuccessRate",
+        "Builtin.Correctness",
+        "Builtin.ToolSelectionAccuracy"
+      ],
+      "samplingRate": 100,
+      "enableOnCreate": true
+    }
+  ],
   "agentCoreGateways": [
     {
       "name": "My-Gateway-Secure",
