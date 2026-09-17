@@ -65,11 +65,6 @@ AgentCoreGateway code includes provision for new access token after 60 minutes e
 - Includes dumping memory records using a script for troubleshooting
 
 
-## 🚀 Future Improvements
- - Add API Gateway and Lambda to the stack if needed (Already tested this and it works with existing codebase)
-
-   Angular => API Gateway => Lambda => AgentCore Runtime => AgentCore Gateway
-
 ## Folder Hierarchy
 
 ```
