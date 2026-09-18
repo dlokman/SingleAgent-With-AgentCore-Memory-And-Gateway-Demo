@@ -1,6 +1,6 @@
-# Single Agent Chatbot with AgentCore Memory & Gateway
+# 🤖 Single Agent Chatbot with AgentCore Memory & Gateway
 
-## Tech Stack
+## 🧰 Tech Stack
 - **Architecture:** AWS-Native Tech Stack
 - **Project Setup:** UV-based project created using the AgentCore CLI
 - **Hosting Platform:** Amazon Bedrock AgentCore
@@ -65,7 +65,7 @@ AgentCoreGateway code includes provision for new access token after 60 minutes e
 - Includes dumping memory records using a script for troubleshooting
 
 
-## Folder Hierarchy
+## 📁 Folder Hierarchy
 
 ```
 FlightBookingSupport/
@@ -97,7 +97,7 @@ FlightBookingSupport/
 
 ```
 
-## Project Installation (After Cloning the Repository)
+## ⚙️ Project Installation (After Cloning the Repository)
 
 1. From the `FlightBookingSupport/agentcore/cdk` folder (CDK is an npm-based project), run:
 
