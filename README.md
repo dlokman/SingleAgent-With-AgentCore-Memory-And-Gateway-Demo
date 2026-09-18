@@ -117,40 +117,38 @@ FlightBookingSupport/
 ```text
 
 **AgentCore Memory Test**
-login with dan.lokman@hotmail.com to FlightBookingAgent
+Login with dan.lokman@hotmail.com to FlightBookingAgent
 Hi, What can you do?
-My name is Dan and I prefer window seats.   (stored in User Preferences - Long Term Memory - can be retrieved cross sessions)
-Logout and Log back In - Or  Click on New Chat (will use a New Session ID). Wait 1-2 minutes for Long Term Memory
-What do i prefer?                              (Information Retrieved from Semantic- Long Term Memory)
+My name is Dan and I prefer window seats.         <====== Stored in User Preferences (Long Term Memory). Can be retrieved cross sessions
+Logout and Log back In Or Click on New Chat       <====== Will use a New Session ID. Wait 1-2 minutes for Long Term Memory to be generated
+What do i prefer?                                 <====== Information Retrieved from Semantic- Long Term Memory
 
-in another browser login with dlokman746@gmail.com to FlightBookingAgent
-What do i prefer? (old memories if still retained for 7 days. Memory is specific for user)
+In another browser login with dlokman746@gmail.com to FlightBookingAgent
+What do i prefer?                                 <====== No Memories Or Old memories. Memory is specific for user
 
-I just bought a Mechanical Keyboard           (stored in Semantic Memory - Long Term Memory - can be retrieved cross sessions)
-Logout and Log back In - Or  Click on New Chat (will use a New Session ID). Wait 1-2 minutes for Long Term Memory
-What did i just buy?                              (Information Retrieved from Semantic- Long Term Memory)
+I just bought a Mechanical Keyboard               <====== Stored in Semantic Memory (Long Term Memory). Can be retrieved cross sessions
+Logout and Log back In - Or  Click on New Chat    <====== Will use a New Session ID. Wait 1-2 minutes for Long Term Memory to be generated
+What did i just buy?                              <====== Information Retrieved from Semantic- Long Term Memory
 
-I own a HP Elitebook Laptop                    (stored in Semantic Memory)
-
+I own a HP Elitebook Laptop                       <====== stored in Semantic Memory
 
 **AgentCore Gateway Test**
 Gateway Target is Lambda Function called workshop-get-fare-policy
 
-List all available fare classes                       (local tool invoked)
-What is the fare policy for economy_flex fare class?  (Model will invoke Gateway Target: Lambda Function workshop-get-fare-policy to get the result)
+List all available fare classes                       <====== Local tool invoked
+What is the fare policy for economy_flex fare class?  <====== Model will invoke Gateway Target: Lambda Function workshop-get-fare-policy to get the result
 
 **Local Tools Test**
-Find me flights from Houston to Seattle on October 15, 2026.   (Search for flights)
+Find me flights from Houston to Seattle on October 15, 2026.   <====== Search for flights
 Book FLT-102 for John Smith
-Show me all bookings for John Smith.                          (Retrieve Bookings)
-Cancel John Smith's FLT-102 booking                           (Before cancelling, model will call get_all_bookings_for_passenger(passenger_name)
-                                                               to verify passenger currently has the booking
-Verify deletion                                                Show me all bookings for John Smith.
+Show me all bookings for John Smith.                           <====== Retrieve Bookings
+Cancel John Smith's FLT-102 booking                            <====== Before cancelling, model will call get_all_bookings_for_passenger(passenger_name) to verify passenger currently has the booking
+Show me all bookings for John Smith                            <====== Verify deletion
 
-Error conditions test
-Find me flights from Houston to Los Angeles on October 15, 2026. (No Flights)
-Book FLT-999 for John Smith.                                     (Try to Book an Invalid flight ID)
-After John already has FLT-102: Book FLT-102 for John Smith.     (Duplicate booking)
-Cancel booking BK-DOESNOTEXIST for John Smith.                   (Cancel nonexistent booking)
+**Error conditions test**
+Find me flights from Houston to Los Angeles on October 15, 2026. <====== No Flights
+Book FLT-999 for John Smith.                                     <====== Try to Book an Invalid flight ID
+After John already has FLT-102: Book FLT-102 for John Smith.     <====== Duplicate booking
+Cancel booking BK-DOESNOTEXIST for John Smith.                   <====== Cancel nonexistent booking
 
 ```
