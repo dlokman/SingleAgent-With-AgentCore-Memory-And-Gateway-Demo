@@ -63,7 +63,7 @@ AgentCoreGateway code includes provision for new access token after 60 minutes e
 
 - Admin User gate access to application by creating users via script and assigning user to a group for role based access
 
-- Includes dumping memory records using a script for troubleshooting
+- Includes extracting memory records using a script for troubleshooting
 
 
 ## 📁 Folder Hierarchy
