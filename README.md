@@ -8,6 +8,7 @@
 - **MCP Server:** AgentCore Gateway → AWS Lambda Target
 - **Programming Language:** Python
 
+<a id="architecture-diagram"></a>
 ## 🏗️ Architecture Overview
 ![architecture](Architecture-Diagram.svg)
 
